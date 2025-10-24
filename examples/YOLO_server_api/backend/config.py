@@ -53,19 +53,23 @@ if USE_SAHI and USE_TENSORRT:
 
 # Display current configuration
 _CONFIG_INFO: str = f"""
-🔧 YOLO Server API Configuration:
-   • USE_TENSORRT: {USE_TENSORRT}
-   • USE_SAHI: {USE_SAHI}
-   • Model file format: {'.pt' if USE_SAHI or not USE_TENSORRT else '.engine'}
-   • Inference method: {
+YOLO Server API Configuration:
+   - USE_TENSORRT: {USE_TENSORRT}
+   - USE_SAHI: {USE_SAHI}
+   - Model file format: {'.pt' if USE_SAHI or not USE_TENSORRT else '.engine'}
+   - Inference method: {
     'SAHI slicing' if USE_SAHI else
     'TensorRT' if USE_TENSORRT else
     'Standard YOLO'
 }
-   • Model variants: {', '.join(MODEL_VARIANTS)}
+   - Model variants: {', '.join(MODEL_VARIANTS)}
 """
 
-print(_CONFIG_INFO)
+# Only print if output encoding supports it
+try:
+    print(_CONFIG_INFO)
+except UnicodeEncodeError:
+    print("YOLO Server API Configuration loaded successfully")
 
 # Type hints and docstrings added for clarity and maintainability
 

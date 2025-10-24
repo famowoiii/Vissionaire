@@ -398,9 +398,22 @@ class LiveStreamDetector:
             datas = await self._detect_cloud_ws(frame)
             tracked = self._track_remote(datas)
         else:
+            # Optimize for CPU: Resize frame before inference to reduce computation
+            h, w = frame.shape[:2]
+            target_size = 640  # Reduce from original size for faster inference
+            if max(h, w) > target_size:
+                scale = target_size / max(h, w)
+                resized_frame = cv2.resize(frame, (int(w * scale), int(h * scale)))
+                scale_x = w / resized_frame.shape[1]
+                scale_y = h / resized_frame.shape[0]
+            else:
+                resized_frame = frame
+                scale_x = 1.0
+                scale_y = 1.0
+
             # Batch process detection results to improve efficiency
             results = self.ultralytics_model.track(
-                frame, persist=True, verbose=False,
+                resized_frame, persist=True, verbose=False,
             )
             boxes = results[0].boxes
 
@@ -412,7 +425,7 @@ class LiveStreamDetector:
                 -1,
             ] * len(boxes)
 
-            # Batch calculate all bounding box data
+            # Batch calculate all bounding box data and scale back to original size
             xyxy_batch = boxes.xyxy.tolist()
             conf_batch = boxes.conf.tolist()
             cls_batch = boxes.cls.tolist()
@@ -421,7 +434,13 @@ class LiveStreamDetector:
             tracked = []
 
             for i in range(len(boxes)):
-                xyxy = xyxy_batch[i]
+                # Scale coordinates back to original frame size
+                xyxy = [
+                    xyxy_batch[i][0] * scale_x,
+                    xyxy_batch[i][1] * scale_y,
+                    xyxy_batch[i][2] * scale_x,
+                    xyxy_batch[i][3] * scale_y,
+                ]
                 conf = float(conf_batch[i])
                 cls = int(cls_batch[i])
                 tid = (

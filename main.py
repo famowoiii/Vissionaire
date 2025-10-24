@@ -335,8 +335,8 @@ async def _run_single_stream(cfg: StreamConfig) -> None:
     work_end_hour = cfg['work_end_hour']
     store_in_redis = cfg['store_in_redis']
 
-    # Initialise components
-    streaming_capture = StreamCapture(stream_url=video_url)
+    # Initialise components (with optimized capture interval for CPU)
+    streaming_capture = StreamCapture(stream_url=video_url, capture_interval=30)
     live_stream_detector = LiveStreamDetector(
         api_url=os.getenv('DETECT_API_URL') or '',
         model_key=model_key,
